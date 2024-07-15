@@ -44,10 +44,7 @@ let
   config = import ./config.nix { inherit fetchFromSavannah; };
 
   # Needed during postInstall
-  buildRuby =
-    if stdenv.hostPlatform == stdenv.buildPlatform
-    then "$out/bin/ruby"
-    else "${buildPackages.ruby}/bin/ruby";
+  buildRuby = "${buildPackages.ruby}/bin/ruby";
 
   self =
     stdenv.mkDerivation {
@@ -69,7 +66,8 @@ let
         ++ ops (stdenv.buildPlatform != stdenv.hostPlatform)
           [ buildPackages.ruby ];
       buildInputs =
-        (op fiddleSupport libffi)
+        [ autoconf ]
+        ++ (op fiddleSupport libffi)
         ++ (ops cursesSupport [ ncurses readline ])
         ++ (op docSupport groff)
         ++ (op zlibSupport zlib)
@@ -106,7 +104,8 @@ let
       '';
 
       preConfigure = ''
-        sed -i configure -e 's/;; #(/\n;;/g'
+        export BASERUBY=${buildRuby}
+        autoconf && sed -i configure -e 's/;; #(/\n;;/g'
       '';
 
       configureFlags =
